@@ -54,11 +54,12 @@ loss.backward()  # equivalent to loss.backward(torch.FloatTensor([1.0]))
 print(x.grad.data)
 
 
-print("----------------------")
+print("---------------------------------------------------------")
 a = Variable(torch.FloatTensor([3]), requires_grad=True)
 b = a * a
 print(a)
 print(b)
-grad = torch.tensor([5], dtype=torch.float)
+grad = torch.tensor([5], dtype=torch.float)# 这里的torch.tensor([5])是一种类似权重的东西,不过不清楚是什么
 b.backward(grad)
 print(a.grad.data)
+print(a.grad) # print(a.grad)效果与print(a.grad.data)效果一样
