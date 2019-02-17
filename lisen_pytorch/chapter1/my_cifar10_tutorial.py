@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -28,23 +29,38 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
+
 net = Net()
 
+
 def imshow(img):
-    img = img / 2 + 0.5     # unnormalize
+    """
+    将转成tensor的图像再变回img
+    :param img:
+    :return:
+    """
+    img = img / 2 + 0.5  # unnormalize，由[-1,1]恢复为[0,1]
     npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    plt.imshow(np.transpose(npimg, (1, 2, 0))) # np.transpose转置，维数转换，将形状为[C,H,W]再变为[H,W,C]，即原图像的格式
     plt.show()
 
+
 if __name__ == '__main__':
-    transform = transforms.Compose(
+    # The output of torchvision datasets are PILImage images of range [0, 1].
+    # We transform them to Tensors of normalized range [-1, 1].
+    transform = transforms.Compose(  # 一起组合几个变换
         [transforms.ToTensor(),
+         # 把一个取值范围是[0,255]的PIL.Image或者shape为(H,W,C)的numpy.ndarray，转换成形状为[C,H,W]，取值范围是[0,1.0]的torch.FloadTensor
+         # B*C*H*W：batchsize*channel*height*width
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    # transforms.Normalize这里是针对彩色图像，所以有三个通道（红绿蓝），第一组是三个通道的平均值，第二组是三个通道的标准差
+    # https://discuss.pytorch.org/t/understanding-transform-normalize/21730
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                               shuffle=True, num_workers=2)
+    # shuffle=True表示每轮epoch将数据重新洗牌
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                            download=True, transform=transform)
@@ -55,11 +71,11 @@ if __name__ == '__main__':
                'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     # get some random training images
-    dataiter = iter(trainloader)
+    dataiter = iter(trainloader) # trainloader加入迭代器
     images, labels = dataiter.next()
 
     # show images
-    imshow(torchvision.utils.make_grid(images))
+    imshow(torchvision.utils.make_grid(images)) # 制作一个图像网格,show
     # print labels
     print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
@@ -89,7 +105,7 @@ if __name__ == '__main__':
                       (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
     print('Finished Training')
-    
+
     ## test
     dataiter = iter(testloader)
     images, labels = dataiter.next()
@@ -114,5 +130,6 @@ if __name__ == '__main__':
 
     print('Accuracy of the network on the 10000 test images: %d %%' % (
             100 * correct / total))
-    
-       
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
