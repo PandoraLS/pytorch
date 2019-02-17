@@ -115,5 +115,4 @@ if __name__ == '__main__':
     print('Accuracy of the network on the 10000 test images: %d %%' % (
             100 * correct / total))
     
-    
-    
+       
