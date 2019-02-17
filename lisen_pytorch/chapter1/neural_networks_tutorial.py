@@ -61,15 +61,18 @@ class Net(nn.Module):
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
         # If the size is a square you can only specify a single number
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))  # 这里view是什么?
-        print("========================")
-        print(x.size())
+        # The view function is meant to reshape the tensor.
+        # view()中的参数-1，只能用一次
+        x = x.view(-1, self.num_flat_features(x))  # view是对数据结构以reshape的形式展现
+
+        # print("========================")
+        # print(x.size())
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
-    def num_flat_features(self, x):
+    def num_flat_features(seylf, x):
         size = x.size()[1:]  # all dimensions except the batch dimension
         num_features = 1
         for s in size:
@@ -90,7 +93,11 @@ print(net)
 
 params = list(net.parameters())
 print(len(params))
+print(params)
 print(params[0].size())  # conv1's .weight
+print("***************************")
+for param in params:
+    print(param.size())
 #
 ########################################################################
 # Let try a random 32x32 input.
