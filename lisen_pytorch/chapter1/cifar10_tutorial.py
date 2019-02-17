@@ -54,6 +54,10 @@ We will do the following steps in order:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using ``torchvision``, it’s extremely easy to load CIFAR10.
+# 此多进程程序在windows下不可用，需要修改为
+if __name__ == '__main__':
+    ...
+参考：https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 """
 import torch
 import torchvision
