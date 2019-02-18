@@ -79,7 +79,7 @@ if __name__ == '__main__':
     # print labels
     print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss() # 交叉熵在单分类问题上基本是标配的方法
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     # train
@@ -93,13 +93,17 @@ if __name__ == '__main__':
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
+            outputs = net(inputs) # outputs是image对应的tensor
+            loss = criterion(outputs, labels) # loss在这里是个标量
             loss.backward()
             optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
+            running_loss += loss.item() # 把前2000个loss值(标量)都加起来
+            # 由于统一返回值，tensor 返回都为 tensor , 为了获得 python number 现在需要通过.item()来实现，
+            # 考虑到之前的 loss 累加为 total_loss +=loss.data[0], 由于现在 loss 为0维张量,
+            # 0维（也就是标量）检索是没有意义的，所以应该使用 total_loss+=loss.item()，
+            # 通过.item() 从张量中获得 python number.
             if i % 2000 == 1999:  # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, running_loss / 2000))
