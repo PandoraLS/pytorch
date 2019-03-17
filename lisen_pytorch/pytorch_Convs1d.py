@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 print("1-----------------------------------")
 x = torch.ones(1, 1, 7)
-conv = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1, padding=0, bias=False)
+conv = nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3, stride=1, padding=2, bias=False)
 conv.weight.data = torch.ones(1, 1, 3)
 y = conv(x)
 print(y)
