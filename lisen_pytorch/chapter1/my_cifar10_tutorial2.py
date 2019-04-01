@@ -8,11 +8,13 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.data import DataLoader
 
 
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+
         self.conv1 = nn.Conv2d(3, 6, 5)  # in_channels=3,out_channels=6,kernel_size=5
         self.pool = nn.MaxPool2d(2, 2)  # kernel_size和stride
         self.conv2 = nn.Conv2d(6, 16, 5)
@@ -39,7 +41,15 @@ class Net(nn.Module):
 
 
 net = Net()
+criterion = nn.CrossEntropyLoss()  # 交叉熵在单分类问题上基本是标配的方法
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+# 送入设定的设备中
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+net = net.to(device)
+criterion = criterion.to(device)
 
+classes = ('plane', 'car', 'bird', 'cat',
+               'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 def imshow(img):
     """
@@ -53,9 +63,53 @@ def imshow(img):
     plt.show()
 
 
-if __name__ == '__main__':
+def train_epoch(epoch, iterator):
+    running_loss = 0.0
+    net.train()
+    for i, (inputs,labels) in enumerate(iterator, 0):
+        # get the inputs
+        # inputs, labels = data
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)  # outputs是image对应的tensor
+        loss = criterion(outputs, labels)  # loss在这里是个标量
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()  # 把前2000个loss值(标量)都加起来
+        # 由于统一返回值，tensor 返回都为 tensor , 为了获得 python number 现在需要通过.item()来实现，
+        # 考虑到之前的 loss 累加为 total_loss +=loss.data[0], 由于现在 loss 为0维张量,
+        # 0维（也就是标量）检索是没有意义的，所以应该使用 total_loss+=loss.item()，
+        # 通过.item() 从张量中获得 python number.
+        if i % 2000 == 1999:  # print every 2000 mini-batches
+            print('[%d, %5d] loss: %.3f' %
+                  (epoch + 1, i + 1, running_loss / 2000))
+            running_loss = 0.0
+
+
+def evalute_epoch(epoch, iterator):
+    correct = 0
+    total = 0
+    # eval()模式,关闭dropout和batch normalization
+    net.eval()
+    with torch.no_grad():
+        for inputs, labels in iterator:
+            outputs = net(inputs)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    print('[%d, %d %%] acc for 10000 test images'
+          % (epoch, 100 * correct / total))
+
+
+def main():
     # The output of torchvision datasets are PILImage images of range [0, 1].
     # We transform them to Tensors of normalized range [-1, 1].
+    # net = Net()
 
     # 使用已经存在的数据导入已有数据集
     transform = transforms.Compose(  # 一起组合几个变换
@@ -68,86 +122,46 @@ if __name__ == '__main__':
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+    trainloader = DataLoader(trainset, batch_size=4,
                                               shuffle=True, num_workers=2)
     # shuffle=True表示每轮epoch将数据重新洗牌
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                            download=True, transform=transform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+    testloader = DataLoader(testset, batch_size=4,
                                              shuffle=False, num_workers=2)
 
-    classes = ('plane', 'car', 'bird', 'cat',
-               'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-    # get some random training images
-    dataiter = iter(trainloader)  # trainloader加入迭代器
-    images, labels = dataiter.next()
-
-    # show images
-    imshow(torchvision.utils.make_grid(images))  # 制作一个图像网格,show
-    # print labels
-    print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
-
-    criterion = nn.CrossEntropyLoss()  # 交叉熵在单分类问题上基本是标配的方法
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     # train
-    for epoch in range(2):  # loop over the dataset multiple times
-        running_loss = 0.0 # loss值初始化为0
-        for i, data in enumerate(trainloader, 0):
-            # get the inputs
-            inputs, labels = data
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = net(inputs)  # outputs是image对应的tensor
-            loss = criterion(outputs, labels)  # loss在这里是个标量
-            loss.backward()
-            optimizer.step()
-
-            # print statistics
-            running_loss += loss.item()  # 把前2000个loss值(标量)都加起来
-            # 由于统一返回值，tensor 返回都为 tensor , 为了获得 python number 现在需要通过.item()来实现，
-            # 考虑到之前的 loss 累加为 total_loss +=loss.data[0], 由于现在 loss 为0维张量,
-            # 0维（也就是标量）检索是没有意义的，所以应该使用 total_loss+=loss.item()，
-            # 通过.item() 从张量中获得 python number.
-            if i % 2000 == 1999:  # print every 2000 mini-batches
-                print('[%d, %5d] loss: %.3f' %
-                      (epoch + 1, i + 1, running_loss / 2000))
-                running_loss = 0.0
-    print('Finished Training')
-
-
-
-
+    n_epoches = 2
+    for epoch in range(n_epoches):
+        train_epoch(epoch, trainloader)
+        evalute_epoch(epoch, testloader)
+    # print('Finished Training')
 
     ## test
-    dataiter = iter(testloader)
-    images, labels = dataiter.next()
+    # 没有验证集，直接
 
-    # print images
-    imshow(torchvision.utils.make_grid(images))
-    print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
-    outputs = net(images)
-    _, predicted = torch.max(outputs, 1)
-
-    print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
-                                  for j in range(4)))
-    correct = 0
-    total = 0
+    # 判断训练的结果在哪些内容上比较好
+    class_correct = list(0. for i in range(10))
+    class_total = list(0. for i in range(10))
     with torch.no_grad():
         for data in testloader:
             images, labels = data
             outputs = net(images)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            _, predicted = torch.max(outputs, 1)
+            c = (predicted == labels).squeeze()
+            for i in range(4):
+                label = labels[i]
+                class_correct[label] += c[i].item()
+                class_total[label] += 1
 
-    print('Accuracy of the network on the 10000 test images: %d %%' % (
-            100 * correct / total))
+    for i in range(10):
+        print('Accuracy of %5s : %2d %%' % (
+            classes[i], 100 * class_correct[i] / class_total[i]))
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
+
+
+if __name__ == '__main__':
+    main()
