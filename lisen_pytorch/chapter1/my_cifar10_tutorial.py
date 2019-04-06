@@ -29,6 +29,7 @@ class Net(nn.Module):
         # 最初的x：x = [N, 3, 32, 32]
         # x = self.conv1(x)
         # print(x.size()) # torch.Size([4, 6, 28, 28])
+
         x = self.pool(F.relu(self.conv1(x)))  # 池化后(2,2)，维度减少了，x = [N, 6, 14, 14]
         x = self.pool(F.relu(self.conv2(x)))  # x = [N, 16, 5, 5]
         x = x.view(-1, 16 * 5 * 5)  # x = [N, 16 * 5 * 5]
