@@ -18,6 +18,7 @@
 *.zip
 *.tar.gz
 *.rar
+*.pkl
 
 # 特定文件
 # *.iml
