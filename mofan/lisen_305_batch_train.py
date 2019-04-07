@@ -14,14 +14,14 @@ BATCH_SIZE = 5
 x = torch.linspace(1, 10, 10)  # this is x data (torch tensor)
 y = torch.linspace(10, 1, 10)  # this is y data (torch tensor)
 
-torch_dataset = Data.TensorDataset(x, y)
+torch_dataset = Data.TensorDataset(x, y) # 将数据放入
 
 # 用loader讲训练变成分批次的
 loader = Data.DataLoader(
     dataset=torch_dataset,  # torch TensorDataset format
     batch_size=BATCH_SIZE,  # mini batch size
     shuffle=False,  # random shuffle for training
-    num_workers=2,  # subprocesses for loading data
+    num_workers=2  # subprocesses for loading data
 )
 
 
